@@ -1,6 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS
+#define TEST
 #include "TCS.h"
 //全局变量//
+int maxlevel = MAXLEVEL;             //最大关卡数
 int level = 0;                       //关卡数，0表示无尽模式
 int score = 0, add = 10;             //总得分与每次吃食物得分
 int status, sleeptime = 200;         //每次运行的时间间隔
@@ -17,9 +19,67 @@ int steps = 0;                       //计数步数
 int lenth = 4;                       //计数长度
 acheve ach;                          //成就数据
 int mode = 0;                        //游戏模式  0  正常    1  躲避
-int islel = 0;                       //是否为闯关模式
-lel map[6];
+int istest = 0;                       //是否为测试模式
+lel map[MAXLEVEL+1];
 int weisuoyuwei = 0;                 //为所欲为模式
+int Color = 0;
+List mainmenu = { { "开始游戏","游戏说明","排行总榜","成就系统","退出游戏" },5 };
+List Modemenu = { { "自由无限模式", "障碍无限模式", "自由闯关模式", "障碍闯关模式" }, 4 };
+List Mapmenu = { { "小型地图", "中号地图", "大型地图" }, 3 };
+List Maptopmenu = { { "小型地图排行", "中号地图排行", "大型地图排行" }, 3 };
+void printmenu(List menu, int t)
+{
+	int i;
+	for (i = 0; i <= menu.sz; i++)
+	{
+		Pos(MAX_LL / 2 - 6, MAX_CC / 2 - 7+i*2);
+		if (i == t)
+		{
+			color(15*16);
+		}
+		else
+		{
+			color(0);
+		}
+		if (i <= menu.sz-1)
+			printf("  %s  \n\n", menu.name[i]);
+	}
+}
+int Select(List menu)
+{
+	int t = 0;
+	int recordt = 1;
+	system("cls");
+	print();
+	Pos((MAX_LL - 78) / 2 - 1, MAX_CC / 5);
+	printf(" ■■■■■■■■                      ★                      ■■■■■■■■");
+	while (1)
+	{
+		if (recordt != t )
+		{
+			printmenu(menu, t);
+		}
+		Pos(158, 43);
+		recordt = t;
+		if (GetAsyncKeyState(VK_DOWN) && t<menu.sz-1)
+		{
+			t++;
+			Sleep(200);
+		}
+		if (GetAsyncKeyState(VK_UP) && t>0)
+		{
+			t--;
+			Sleep(200);
+		}
+		if (GetAsyncKeyState(VK_RETURN))
+		{
+			Sleep(200);
+			return t;
+		}
+	}
+
+}
+//设置关卡
 void push(int l,int x, int y)
 {
 	if (map[l].sz == map[l].capacity)
@@ -84,6 +144,44 @@ void initlevel()
 		push(5, 20, i);
 		push(5, 100, i);
 	}
+	for (i = 4; i <= 116; i += 4)
+	{
+		push(6, i, 22);
+		push(7, i, 22);
+	}
+	for (i = 2; i <= 42; i += 2)
+	{
+		push(7,60,i);
+	}
+	for (i = 2; i < MAX_L - 2; i += 2)
+	{
+		if (abs(i - 60) <= 2)continue;
+		push(8, i, 22);
+		push(9, i, 22);
+		if (abs(i - 60)>6)
+		{
+			push(10, i, 1);
+			push(10, i, 43);
+		}
+	}
+	for (i = 1; i < MAX_C; i++)
+	{
+		if (abs(i - 22) <= 1)continue;
+		push(9, 60, i);
+		if (abs(i - 22) > 3)
+		{
+			push(10, 2, i);
+			push(10, 118, i);
+		}
+	}
+	for (i = 2; i < MAX_L - 2; i += 2)
+	{
+		push(10, i, 22);
+	}
+	for (i = 1; i < MAX_C; i++)
+	{
+		push(10, 60, i);
+	}
 }
 //打印关卡障碍
 void printlevel()
@@ -105,6 +203,11 @@ void tfree(snake *p)
 void color(int x)   
 {  
 	static int tmp = 0;
+	if (x < 0)
+	{
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), tmp);
+		return;
+	}
 	if (!x)
 	{
 		do
@@ -112,6 +215,7 @@ void color(int x)
 			x = rand() % 6 + 9;
 		} while (tmp == x);
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), x);  //只有一个参数，改变字体颜色
+		Color = tmp;
 		tmp = x;
 	}
 	else 
@@ -128,28 +232,34 @@ void Pos(int x, int y)
 	SetConsoleCursorPosition(hOutput, pos);
 }
 //创建地图
-void creatMap()
+void creatMap(int x)
 {
 	int i;
+	char p[4] = { 0 };
+	if (x)strcpy(p, "□");
+	else strcpy(p, "■");
+	PlaySound(NULL, NULL, NULL);	
 	for (i = 0; i<MAX_L; i += 2)//打印上下边框
 	{
 		Pos(i, 0);
 		color(0);
-		printf("■");
+		printf(p);
 		Pos(i, MAX_C);
 		color(0);
-		printf("■");
-		Sleep(10);
+		printf(p);
+		//if (!x)
+		//Sleep(10);
 	}
 	for (i = 1; i<MAX_C; i++)//打印左右边框 
 	{
 		Pos(0,i); 
 		color(0);
-		printf("■"); 
+		printf(p); 
 		Pos(MAX_L-2,i); 
 		color(0);
-		printf("■");
-		Sleep(10);
+		printf(p);
+		//if (!x)
+		//Sleep(10);
 	}
 }
 //初始化蛇身
@@ -158,15 +268,15 @@ void initsnake()
 	snake *tail; 
 	int i; 
 	tail=(snake*)malloc(sizeof(snake));//从蛇尾开始，头插法，以x,y设定开始的位置// 
-	tail->x=24;
-	tail->y = 15;
+	tail->x=4;
+	tail->y = 3;
 	tail->next = NULL;
 	for (i = 1; i <= 4; i++) 
 	{
 		head = (snake*)malloc(sizeof(snake)); 
 		head->next = tail;
-		head->x = 24 + 2 * i;
-		head->y = 15;
+		head->x = 4 + 2 * i;
+		head->y = 3;
 		tail = head;
 	}
 	Pos(tail->x, tail->y);
@@ -194,7 +304,7 @@ int biteself()
 	}
 	return 0;
 }
-//随机出现食物
+//随机出现食物/障碍
 void createfood(int x)
 {	
 	snake *food_1;
@@ -310,15 +420,16 @@ void uplevel()
 	print();
 	Pos(60, 22);
 	printf("恭喜过关，三秒后切换关卡");
-	system("cls");
 	Sleep(3000);
+	system("cls");
 	endgame();
 	lenth = 4;
-	creatMap();
+	creatMap(weisuoyuwei);
 	initsnake();
 	createfood(mode);
 	printlevel();
 	status = R;
+	PlaySound("running.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);
 }
 //蛇移动
 void snakemove()
@@ -403,23 +514,24 @@ void snakemove()
 	{
 		nexthead->next = head;
 		head = nexthead;
+		createfood(1);
 		q = head;
 		Pos(q->x, q->y);
-		//color(0);
+		color(Color);
 		printf("●");
 		Pos(q->next->x, q->next->y);
-		//color(0);
 		printf("■");
 		while (q->next != NULL)
 		{
 			q = q->next;
 		}
 		Pos(q->x, q->y);
-		//color(0);
 		printf("■");
+		Pos(MAX_LL-4, MAX_CC-2);
+		printf("  ");
+		PlaySound("error.wav", NULL, SND_FILENAME | SND_ASYNC | SND_NOSTOP);
 		score = score + add*(mode+1);
 		lenth++;
-		createfood(1);
 		t = 0;
 	}
 	else                                               //如果没有食物//
@@ -428,7 +540,7 @@ void snakemove()
 		head = nexthead;
 		q = head;
 		Pos(q->x, q->y);
-		//color(0);
+		//color(Color);
 		printf("●");
 		Pos(q->next->x, q->next->y);
 		//color(0);
@@ -438,6 +550,8 @@ void snakemove()
 			q = q->next;
 		}
 		Pos(q->next->x, q->next->y);
+		printf("  ");
+		Pos(MAX_LL - 4, MAX_CC - 2);
 		printf("  ");
 		free(q->next);
 		q->next = NULL;
@@ -478,25 +592,30 @@ void pause()
 	}
 }
 //控制游戏
-void gamecircle()
+void gamecircle() 
 {
 	static int tscore = -1;
 	static int tlenth = -1;
 	static int tadd = -1;
-	Pos(MAX_L+4, 15);
-	color(0);
-	printf("不能穿墙，不能咬到自己\n");
-	Pos(MAX_L + 4, 16);
-	color(0);
-	printf("用↑.↓.←.→分别控制蛇的移动.");
-	Pos(MAX_L + 4, 17);
-	color(0);
-	printf("F1 为加速，F2 为减速\n");
-	Pos(MAX_L + 4, 18);
-	color(0);
-	printf("ESC ：退出游戏.Space：暂停游戏.");
-	Pos(MAX_L + 4, 20);
-	color(0);
+	static int isweisuoyuwei = 0;
+	static int tlel = 0;
+	{
+		PlaySound("running.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP);
+		Pos(MAX_L + 4, 15);
+		color(0);
+		printf("不能穿墙，不能咬到自己\n");
+		Pos(MAX_L + 4, 16);
+		color(0);
+		printf("用↑.↓.←.→分别控制蛇的移动.");
+		Pos(MAX_L + 4, 17);
+		color(0);
+		printf("F1 为加速，F2 为减速\n");
+		Pos(MAX_L + 4, 18);
+		color(0);
+		printf("ESC ：退出游戏.Space：暂停游戏.");
+		Pos(MAX_L + 4, 20);
+		color(0);
+	}
 	if (mode)
 	{
 		Pos(MAX_L + 4, 22);
@@ -506,12 +625,21 @@ void gamecircle()
 	status = R;
 	while (1)
 	{
+		if (tlel != level)
+		{
+			Pos(MAX_L + 8, 8);
+			printf("关卡%d", level);
+		}
 		if (tscore != score||tadd!=add)
 		{
 			Pos(MAX_L + 6, 10);
 			printf("得分：%d  ", score);
 			Pos(MAX_L + 6, 11);
 			printf("每个食物得分：%d分", add*(mode + 1));
+		}
+		if (weisuoyuwei != isweisuoyuwei)
+		{
+			creatMap(weisuoyuwei);
 		}
 		if (GetAsyncKeyState(VK_UP) && status != D)
 		{
@@ -536,9 +664,11 @@ void gamecircle()
 		else if (GetAsyncKeyState(VK_ESCAPE))
 		{
 			endgamestatus = 3;
+			PlaySound(NULL,NULL,NULL);
 			break;
 		}
-		else if (GetAsyncKeyState(VK_F1))
+		tadd = add;
+		if (GetAsyncKeyState(VK_F1))
 		{
 			if (sleeptime >= 50)
 			{
@@ -562,6 +692,7 @@ void gamecircle()
 				}
 			}
 		}
+		isweisuoyuwei = weisuoyuwei;
 		if (GetAsyncKeyState(VK_F5))
 		{
 			weisuoyuwei = 1;
@@ -570,16 +701,19 @@ void gamecircle()
 		{
 			weisuoyuwei = 0;
 		}
-		if (level&&tlenth!=lenth)
+		tlel = level;
+		if (level&&tlenth!=lenth&&level!=maxlevel)
 		{
 			Pos(MAX_L + 6, 12);
 			printf("关卡进度：%d/25", (lenth - 4) % 25);
-			if (lenth - 4 == 25 && level - 5)
+			if (lenth - 4 == 25)
 			{
 				level++;
 				endgamestatus = 0;
 				uplevel();
 			}
+			if (level > 5)
+				weisuoyuwei = 1;
 		}
 		Sleep(sleeptime);
 		tscore = score;
@@ -643,15 +777,23 @@ void welcometogame()
 	printf("开始进行愉快的贪吃蛇游戏吧  ^_^\n");
 	Pos(MAX_L / 2-12, 25);
 	color(15);
+#ifndef TEST
 	system("pause");
-	system("cls");
+#endif
+#ifdef TEST
+	printf("按下空格键返回...");
+	while (1)
+	{
+		if (GetAsyncKeyState(VK_SPACE))
+			return;
+	}
+#endif
 }
 //结束游戏
 void endgame()
 {
 	char c;
 	system("cls");
-	print();
 	Pos(MAX_L/2, 12);
 	if (endgamestatus == 1)
 	{
@@ -683,6 +825,8 @@ void endgame()
 		map[0].sz = 0;
 		return;
 	}
+	print();
+	PlaySound("death.wav", NULL, SND_FILENAME | SND_ASYNC);
 	Pos(MAX_L / 2, 13);
 	printf("你的得分是:%d,在本局游戏中你一共走了:%d格", score,steps);
 	if (score >= top[(MAX_LL-70)/30*20-1].scores&&endgamestatus)
@@ -694,8 +838,8 @@ void endgame()
 		top[60].steps = steps;
 		Pos(MAX_L / 2, 14);
 		printf("恭喜你进入排行榜！！！！");
+		fflush(stdin);
 		Pos(MAX_L / 2, 15);
-		while ((c = getchar()) != '\n' && c != EOF);
 		printf("是否留下你的名字？(y/n)");
 		scanf("%c", &c);
 		if ('y' == c || 'Y' == c)
@@ -723,7 +867,17 @@ void endgame()
 	run = 1;
 	Pos(MAX_L / 2, 18);
 	map[0].sz = 0;
+#ifndef TEST
 	system("pause");
+#endif
+#ifdef TEST
+	printf("按下空格键返回...");
+	while (1)
+	{
+		if (GetAsyncKeyState(VK_SPACE))
+			return;
+	}
+#endif
 }
 //游戏初始化
 void gamestart()
@@ -738,9 +892,10 @@ void gamestart()
 	run = 0;
 	sprintf((char *)p, "mode con cols=%d lines=%d", MAX_LL, MAX_CC);
 	system((const char*)p);
-	creatMap();
+	creatMap(weisuoyuwei);
 	initsnake();
 	createfood(mode);
+	//level = 5;
 	printlevel();
 }
 //选择地图界面
@@ -764,10 +919,14 @@ void selectmap()
 	int input;
 	do
 	{
+		if (istest)
+			input = Select(Mapmenu)+istest;
+#ifndef TEST
 		system("cls");
 		mapmenu();
 		fflush(stdin);
 		scanf("%d", &input);
+#endif
 		switch (input)
 		{
 		case 1:
@@ -787,7 +946,7 @@ void selectmap()
 		case 3:
 			MAX_LL = 160;
 			MAX_CC = 45;
-			MAX_L = 120;
+			MAX_L = 122;
 			MAX_C = 44;
 			return;
 			break;
@@ -862,10 +1021,14 @@ void selectmode()
 	int input;
 	do
 	{
+		if (istest)
+			input = Select(Modemenu)+istest;
+#ifndef TEST
 		system("cls");
 		modemenu();
 		fflush(stdin);
 		scanf("%d", &input);
+#endif
 		switch (input)
 		{		
 		case 2:
@@ -917,6 +1080,7 @@ void startshow()
 {
 	int i = 0;
 	int t;
+	PlaySound("show.wav", NULL, SND_ASYNC | SND_FILENAME);
 	Pos((MAX_LL - 56) / 2-6, (MAX_CC - 10) / 2 + i++);
 	Sleep(5);
 	color(0);
@@ -995,7 +1159,7 @@ void test()
 	int x = 0;
 	int y = 0;
 	system("cls");
-	creatMap();
+	creatMap(weisuoyuwei);
 	color(15);
 	Pos(MAX_L + 4, 15);
 	printf("按下Esc结束测试状态");
@@ -1012,10 +1176,15 @@ void test()
 		}
 	}
 }
-void testlevel()
+void testlevel(int x)
 {
 	system("mode con cols=160 lines=45");
-	level = 5;
+	level =x;
+	MAX_LL = 160;
+	MAX_CC = 45;
+	MAX_L = 122;
+	MAX_C = 44;
+	creatMap(weisuoyuwei);
 	initlevel();
 	printlevel();
 	system("pause");
@@ -1023,9 +1192,11 @@ void testlevel()
 //主函数
 int main()
 {
+	int t = 0;
 	int input;
 	char p[50];
-	//testlevel();
+	//testlevel(10);
+	istest = 1;
 	system("title LRS-贪吃蛇");
 	initlevel();
 	color(0);
@@ -1036,21 +1207,24 @@ int main()
 	system((const char*)p);
 	startshow();
 	do{
+		PlaySound("begin.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP | SND_NOSTOP);
 		weisuoyuwei = 0;
+		fflush(stdin);
+		Sleep(300);
+		//keybd_event(VK_ESCAPE, (BYTE)0, 0, 0);
+		//keybd_event(VK_ESCAPE, (BYTE)0, KEYEVENTF_KEYUP, 0);
+		if (GetAsyncKeyState(VK_RETURN) | GetAsyncKeyState(VK_UP) | GetAsyncKeyState(VK_DOWN));
+		input = (Select(mainmenu)+1)%5;
+#ifndef TEST
 		system("cls");
 		menu();
 		Pos(MAX_LL / 2 - 14, MAX_CC / 2 + 3);
 		printf("请选择:>");
-		//printf("%d", sizeof(player));
-		fflush(stdin);
 		scanf("%d", &input);
+#endif
 		switch (input)
 		{
 		case 5:
-			mode = 1;
-			game();
-			break;
-		case 6:
 			test();
 			break;
 		case 4:
@@ -1063,10 +1237,10 @@ int main()
 			welcometogame();
 			break;
 		case 1:
-			mode = 0;
 			game();
 			break;
 		case 0:
+			Sleep(100);
 			break;
 		default:
 			Pos(MAX_LL / 2 - 14, MAX_CC / 2 + 4);
@@ -1080,3 +1254,62 @@ int main()
 	Sleep(800);
 	return 0;
 }
+//int main()
+//{
+//	
+//	int t = 0;
+//	int input;
+//	char p[50];
+//	istest = 1;
+//	main1();
+//	istest = 1;
+//	system("title LRS-贪吃蛇");
+//	initlevel();
+//	color(0);
+//	srand((unsigned)time(NULL));
+//	inittop();
+//	loadach();
+//	sprintf((char *)p, "mode con cols=%d lines=%d", MAX_LL, MAX_CC);
+//	system((const char*)p);
+//	startshow();
+//	do{
+//		PlaySound("begin.wav", NULL, SND_ASYNC | SND_FILENAME | SND_LOOP | SND_NOSTOP);
+//		weisuoyuwei = 0;
+//		system("cls");
+//		menu();
+//		Pos(MAX_LL / 2 - 14, MAX_CC / 2 + 3);
+//		printf("请选择:>");
+//		//printf("%d", sizeof(player));
+//		scanf("%d", &input);
+//		switch (input)
+//		{
+//		case 5:
+//			test();
+//			break;
+//		case 4:
+//			showach();
+//			break;
+//		case 3:
+//			showtop();
+//			break;
+//		case 2:
+//			welcometogame();
+//			break;
+//		case 1:
+//			game();
+//			break;
+//		case 0:
+//			Sleep(100);
+//			break;
+//		default:
+//			Pos(MAX_LL / 2 - 14, MAX_CC / 2 + 4);
+//			printf("输入有误请重新输入！\n");
+//			Sleep(500);
+//			break;
+//		}
+//	} while (input);
+//	Pos(MAX_LL / 2 - 14, MAX_CC / 2 + 4);
+//	printf("感谢你的游玩，再见！");
+//	Sleep(800);
+//	return 0;
+//}
